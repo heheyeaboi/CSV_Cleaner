@@ -2,6 +2,8 @@
 
 An OpenEnv reinforcement learning environment where an LLM agent cleans messy CSV datasets by issuing one structured operation per step. The agent inspects the current state of the data — column types, null counts, and a CSV preview — then selects a cleaning operation. After each step the environment returns an updated observation. When the agent signals completion, the environment scores the result against a hidden ground-truth dataset using four equally-weighted metrics.
 
+**Live Environment:** https://riyansh33-csv-clean-env-v2.hf.space
+
 ---
 
 ## Why This Domain?
@@ -96,7 +98,7 @@ When the agent calls `operation: "done"`, the environment computes a final score
 |---|---|---|
 | **dtype_score** | 25% | Fraction of shared columns whose dtype strings match the ground truth |
 | **null_score** | 25% | Fraction of shared columns whose null counts match the ground truth |
-| **shape_score** | 25% | `1.0` if both shape (rows × cols) match; `0.5` if only column count matches; `0.0` otherwise |
+| **shape_score** | 25% | Continuous score based on how close row and column counts are to ground truth; `1.0` for exact match, scales down proportionally |
 | **value_score** | 25% | If shapes match, cell-by-cell equality ratio across shared columns; `0.0` if shapes differ |
 
 The final score is clipped to `[0.0, 1.0]` and rounded to 4 decimal places.
@@ -129,7 +131,8 @@ The server exposes HTTP + WebSocket endpoints at `http://localhost:8000`.
 ### 3. Run the baseline agent
 
 ```bash
-export HF_TOKEN="hf_your_token_here"
+export GROQ_API_KEY="your_groq_key_here"
+export API_BASE_URL="https://riyansh33-csv-clean-env-v2.hf.space"
 python inference.py
 ```
 
@@ -142,8 +145,8 @@ This will run the agent on all three tasks and print the scores.
 | Variable | Default | Description |
 |---|---|---|
 | `API_BASE_URL` | `http://localhost:8000` | URL of the running environment server |
-| `HF_TOKEN` | — | HuggingFace API token for inference |
-| `MODEL_NAME` | `Qwen/Qwen2.5-72B-Instruct` | Model ID on HuggingFace Hub |
+| `GROQ_API_KEY` | — | Groq API key for inference |
+| `MODEL_NAME` | `llama-3.3-70b-versatile` | Model ID on Groq |
 
 ---
 

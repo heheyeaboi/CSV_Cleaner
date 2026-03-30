@@ -1,8 +1,7 @@
 """
 Baseline LLM agent for the CSV Clean Environment.
 
-Uses a HuggingFace-hosted model via the OpenAI-compatible API
-to issue cleaning operations step-by-step.
+Uses Google Gemini to issue cleaning operations step-by-step.
 """
 
 import os
@@ -14,16 +13,8 @@ from openai import OpenAI
 
 # ── Configuration ─────────────────────────────────────────────────────────
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
-HF_TOKEN = os.environ.get("HF_TOKEN", "")
-MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.2-3B-Instruct")
-
-# ── LLM client (HuggingFace Inference API, OpenAI-compatible) ────────────
-llm_client = OpenAI(
-    base_url="https://router.huggingface.co/v1/",
-    api_key=HF_TOKEN,
-)
-
-
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+MODEL_NAME = os.environ.get("MODEL_NAME", "llama-3.3-70b-versatile")
 SYSTEM_PROMPT = """You are a data-cleaning agent. You will receive:
 - A task description
 - A preview of the current CSV data
@@ -41,10 +32,17 @@ When you believe the dataset is fully clean, use operation "done".
 
 Important rules:
 - Check "Last operation result" to know what was already done successfully.
+- Check "Actions already taken" list — never repeat any operation from that list.
 - Never repeat the same operation on the same column twice.
 - After each successful operation, move on to the next problem.
 - Only call "done" when ALL issues are fixed.
 """
+
+# ── LLM client (Google Gemini) ────────────────────────────────────────────
+llm_client = OpenAI(
+    base_url="https://api.groq.com/openai/v1",
+    api_key=GROQ_API_KEY,
+)
 
 
 def run_task(task_name: str) -> float:
@@ -56,6 +54,7 @@ def run_task(task_name: str) -> float:
             json={"task": task_name},
         ).json()
         obs = reset_resp["observation"]
+        action_history = []
 
         for step in range(20):
             user_prompt = (
@@ -64,7 +63,8 @@ def run_task(task_name: str) -> float:
                 f"Null counts: {json.dumps(obs['null_counts'])}\n"
                 f"Column dtypes: {json.dumps(obs['dtypes'])}\n"
                 f"Steps taken: {obs['steps_taken']}\n"
-                f"Last operation result: {obs['last_operation_result']}\n\n"
+                f"Last operation result: {obs['last_operation_result']}\n"
+                f"Actions already taken:\n" + ("\n".join(action_history[:-1]) if action_history else "None") + "\n\n"
                 f"What is the next cleaning operation?"
             )
 
@@ -93,6 +93,8 @@ def run_task(task_name: str) -> float:
                 "column": parsed.get("column"),
                 "value": parsed.get("value"),
             }
+
+            action_history.append(f"Step {step+1}: {action['operation']}" + (f" on {action['column']}" if action.get('column') else "") + (f" = {action['value']}" if action.get('value') else ""))
 
             print(f"  Step {step + 1}: {action['operation']}"
                   f"{' -> ' + action['column'] if action['column'] else ''}"

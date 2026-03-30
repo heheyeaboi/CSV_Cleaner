@@ -35,12 +35,13 @@ except Exception as e:  # pragma: no cover
         "openenv is required for the web interface. Install dependencies with '\n    uv sync\n'"
     ) from e
 
-try:
-    from models import CsvCleanAction, CsvCleanObservation
-    from server.csv_clean_env_environment import CsvCleanEnvironment
-except ModuleNotFoundError:
-    from ..models import CsvCleanAction, CsvCleanObservation
-    from .csv_clean_env_environment import CsvCleanEnvironment
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from models import CsvCleanAction, CsvCleanObservation
+from csv_clean_env_environment import CsvCleanEnvironment
 
 
 # Create the app with web interface and README integration
@@ -76,9 +77,4 @@ def main(host: str = "0.0.0.0", port: int = 8000):
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=8000)
-    args = parser.parse_args()
-    main(port=args.port)
+    main()

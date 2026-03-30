@@ -7,20 +7,19 @@ to issue cleaning operations step-by-step.
 
 import os
 import json
+import requests
 
 from openai import OpenAI
-from openenv.core.env_client import EnvClient
-from models import CsvCleanAction
 
 
 # ── Configuration ─────────────────────────────────────────────────────────
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
-MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.2-3B-Instruct")
 
 # ── LLM client (HuggingFace Inference API, OpenAI-compatible) ────────────
 llm_client = OpenAI(
-    base_url="https://api-inference.huggingface.co/v1/",
+    base_url="https://router.huggingface.co/v1/",
     api_key=HF_TOKEN,
 )
 
@@ -39,22 +38,33 @@ You must respond with ONLY a valid JSON object (no markdown, no explanation) wit
 }
 
 When you believe the dataset is fully clean, use operation "done".
+
+Important rules:
+- Check "Last operation result" to know what was already done successfully.
+- Never repeat the same operation on the same column twice.
+- After each successful operation, move on to the next problem.
+- Only call "done" when ALL issues are fixed.
 """
 
 
 def run_task(task_name: str) -> float:
     """Run a single cleaning task and return the final score."""
     try:
-        env = EnvClient(base_url=API_BASE_URL)
-        obs = env.reset(task=task_name)
+        # Reset the environment
+        reset_resp = requests.post(
+            f"{API_BASE_URL}/reset",
+            json={"task": task_name},
+        ).json()
+        obs = reset_resp["observation"]
 
         for step in range(20):
             user_prompt = (
-                f"Task: {obs.task_description}\n\n"
-                f"Current CSV (first 20 rows):\n{obs.current_csv}\n\n"
-                f"Null counts: {json.dumps(obs.null_counts)}\n"
-                f"Column dtypes: {json.dumps(obs.dtypes)}\n"
-                f"Steps taken: {obs.steps_taken}\n\n"
+                f"Task: {obs['task_description']}\n\n"
+                f"Current CSV (first 20 rows):\n{obs['current_csv']}\n\n"
+                f"Null counts: {json.dumps(obs['null_counts'])}\n"
+                f"Column dtypes: {json.dumps(obs['dtypes'])}\n"
+                f"Steps taken: {obs['steps_taken']}\n"
+                f"Last operation result: {obs['last_operation_result']}\n\n"
                 f"What is the next cleaning operation?"
             )
 
@@ -78,41 +88,51 @@ def run_task(task_name: str) -> float:
                 raw = raw.strip()
 
             parsed = json.loads(raw)
-            action = CsvCleanAction(
-                operation=parsed["operation"],
-                column=parsed.get("column"),
-                value=parsed.get("value"),
-            )
+            action = {
+                "operation": parsed["operation"],
+                "column": parsed.get("column"),
+                "value": parsed.get("value"),
+            }
 
-            print(f"  Step {step + 1}: {action.operation}"
-                  f"{' -> ' + action.column if action.column else ''}"
-                  f"{' = ' + action.value if action.value else ''}")
+            print(f"  Step {step + 1}: {action['operation']}"
+                  f"{' -> ' + action['column'] if action['column'] else ''}"
+                  f"{' = ' + action['value'] if action['value'] else ''}")
 
-            obs = env.step(action)
+            # Step the environment
+            step_resp = requests.post(
+                f"{API_BASE_URL}/step",
+                json={"action": action},
+            ).json()
 
-            if obs.last_operation_result.startswith("Episode complete"):
-                score_str = obs.last_operation_result.split(":")[-1].strip()
-                score = float(score_str)
-                print(f"  ✓ Done! Score: {score}")
-                return score
+            obs = step_resp["observation"]
+            done = step_resp.get("done", False)
+            reward = step_resp.get("reward")
 
-            if obs.errors:
-                print(f"  ⚠ Errors: {obs.errors}")
+            if done:
+                score = reward if reward is not None else 0.0
+                print(f"  DONE! Score: {score}")
+                return float(score)
+
+            if obs.get("errors"):
+                print(f"  ⚠ Errors: {obs['errors']}")
 
         # Loop ended without agent calling "done" — force it
         print("  Max steps reached, forcing done...")
-        action = CsvCleanAction(operation="done")
-        obs = env.step(action)
-        if obs.last_operation_result.startswith("Episode complete"):
-            score_str = obs.last_operation_result.split(":")[-1].strip()
-            score = float(score_str)
-            print(f"  ✓ Final score: {score}")
-            return score
+        step_resp = requests.post(
+            f"{API_BASE_URL}/step",
+            json={"action": {"operation": "done"}},
+        ).json()
+
+        done = step_resp.get("done", False)
+        reward = step_resp.get("reward")
+        if done and reward is not None:
+            print(f"  DONE Final score: {reward}")
+            return float(reward)
 
         return 0.0
 
     except Exception as e:
-        print(f"  ✗ Exception: {e}")
+        print(f"  X Exception: {e}")
         return 0.0
 
 

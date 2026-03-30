@@ -297,12 +297,14 @@ class CsvCleanEnvironment(Environment):
                     return ("", ["Target type required for fix_type"])
                 if action.column not in df.columns:
                     return ("", [f"Column '{action.column}' not found"])
-                if action.value in ("int", "float"):
+                if action.value in ("float", "float64"):
                     df[action.column] = pd.to_numeric(df[action.column], errors="coerce")
+                elif action.value in ("int", "int64"):
+                    df[action.column] = pd.to_numeric(df[action.column], errors="coerce").astype("Int64")
                 elif action.value == "datetime":
                     df[action.column] = pd.to_datetime(df[action.column], errors="coerce")
-                elif action.value == "str":
-                    df[action.column] = df[action.column].astype(str)
+                else:
+                    df[action.column] = df[action.column].astype(action.value)
                 session["current_df"] = df
                 return (f"Cast column '{action.column}' to {action.value}", [])
 

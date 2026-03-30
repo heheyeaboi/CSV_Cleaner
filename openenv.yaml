@@ -1,0 +1,20 @@
+spec_version: 1
+name: csv_clean_env
+type: space
+runtime: fastapi
+app: server.app:app
+port: 8000
+description: "An RL environment where an agent cleans messy CSV datasets by issuing one operation per step, scored against a ground truth."
+tasks:
+  - name: easy
+    description: "Clean a sales dataset: strip whitespace from product names, fix price column type, fill missing quantities with 0."
+    max_steps: 20
+    target_score: 0.9
+  - name: medium
+    description: "Clean an employee dataset: remove duplicates, standardize department casing, rename Department to department, fix join_date type, fill missing salaries with 0."
+    max_steps: 20
+    target_score: 0.7
+  - name: hard
+    description: "Clean a medical dataset: drop the notes column, fix age and date types, standardize gender casing, remove duplicates, fill missing insurance codes with UNKNOWN, strip whitespace from name and blood_pressure."
+    max_steps: 20
+    target_score: 0.5

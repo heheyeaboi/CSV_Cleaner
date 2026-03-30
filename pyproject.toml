@@ -28,8 +28,7 @@ dev = [
 [project.scripts]
 # Server entry point - enables running via: uv run --project . server
 # or: python -m csv_clean_env.server.app
-server = "csv_clean_env.server.app:main"
-
+server = "server.app:main"
 [tool.setuptools]
 include-package-data = true
 packages = ["csv_clean_env", "csv_clean_env.server"]

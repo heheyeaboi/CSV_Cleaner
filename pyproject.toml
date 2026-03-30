@@ -19,19 +19,14 @@ dependencies = [
     "numpy>=1.24.0",
 ]
 
-
-
 [project.scripts]
-# Server entry point - enables running via: uv run --project . server
-# or: python -m csv_clean_env.server.app
 server = "server.app:main"
-[tool.setuptools]
-include-package-data = true
-packages = ["csv_clean_env", "csv_clean_env.server"]
-package-dir = { "csv_clean_env" = ".", "csv_clean_env.server" = "server" }
 
-[tool.uv]
-dev-dependencies = [
+[tool.setuptools.packages.find]
+where = ["."]
+
+[dependency-groups]
+dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
 ]

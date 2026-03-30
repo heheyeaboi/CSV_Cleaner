@@ -213,7 +213,8 @@ class CsvCleanEnvironment(Environment):
             truth_df = pd.DataFrame(self.CLEAN_1)
             task_description = (
                 "Clean a sales dataset: strip whitespace from product names, "
-                "fix price column type, fill missing quantities with 0."
+                "fix price column type to float, drop rows where price is null, "
+                "fill missing quantities with 0."
             )
         elif task == "medium":
             dirty_df = pd.DataFrame(self.DIRTY_2)
@@ -301,7 +302,7 @@ class CsvCleanEnvironment(Environment):
                     df[action.column] = pd.to_numeric(df[action.column], errors="coerce")
                 elif action.value in ("int", "int64"):
                     df[action.column] = pd.to_numeric(df[action.column], errors="coerce").astype("Int64")
-                elif action.value == "datetime":
+                elif action.value in ("datetime", "datetime64", "datetime64[ns]"):
                     df[action.column] = pd.to_datetime(df[action.column], errors="coerce")
                 else:
                     df[action.column] = df[action.column].astype(action.value)

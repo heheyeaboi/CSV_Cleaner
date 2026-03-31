@@ -131,7 +131,7 @@ The server exposes HTTP + WebSocket endpoints at `http://localhost:8000`.
 ### 3. Run the baseline agent
 
 ```bash
-export GROQ_API_KEY="your_groq_key_here"
+export HF_TOKEN="your_huggingface_token_here"
 export API_BASE_URL="https://riyansh33-csv-clean-env-v2.hf.space"
 python inference.py
 ```
@@ -145,8 +145,8 @@ This will run the agent on all three tasks and print the scores.
 | Variable | Default | Description |
 |---|---|---|
 | `API_BASE_URL` | `http://localhost:8000` | URL of the running environment server |
-| `GROQ_API_KEY` | — | Groq API key for inference |
-| `MODEL_NAME` | `llama-3.3-70b-versatile` | Model ID on Groq |
+| `HF_TOKEN` | — | HuggingFace token for inference |
+| `MODEL_NAME` | `meta-llama/Llama-3.3-70B-Instruct` | Model ID on HuggingFace |
 
 ---
 

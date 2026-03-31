@@ -1,7 +1,7 @@
 """
 Baseline LLM agent for the CSV Clean Environment.
 
-Uses Google Gemini to issue cleaning operations step-by-step.
+Uses HuggingFace Inference Router with Llama-3.3-70B to issue cleaning operations step-by-step.
 """
 
 import os
@@ -13,8 +13,8 @@ from openai import OpenAI
 
 # ── Configuration ─────────────────────────────────────────────────────────
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-MODEL_NAME = os.environ.get("MODEL_NAME", "llama-3.3-70b-versatile")
+HF_TOKEN = os.environ.get("HF_TOKEN", "")
+MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.3-70B-Instruct")
 SYSTEM_PROMPT = """You are a data-cleaning agent. You will receive:
 - A task description
 - A preview of the current CSV data
@@ -40,8 +40,8 @@ Important rules:
 
 # ── LLM client (Google Gemini) ────────────────────────────────────────────
 llm_client = OpenAI(
-    base_url="https://api.groq.com/openai/v1",
-    api_key=GROQ_API_KEY,
+    base_url="https://router.huggingface.co/v1",
+    api_key=HF_TOKEN,
 )
 
 

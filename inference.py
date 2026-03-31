@@ -38,7 +38,7 @@ Important rules:
 - Only call "done" when ALL issues are fixed.
 """
 
-# ── LLM client (Google Gemini) ────────────────────────────────────────────
+# ── LLM client (HuggingFace Inference Router) ────────────────────────────
 llm_client = OpenAI(
     base_url="https://router.huggingface.co/v1",
     api_key=HF_TOKEN,

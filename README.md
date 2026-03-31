@@ -1,3 +1,12 @@
+---
+title: CSV Clean Env
+emoji: 🧹
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 8000
+pinned: false
+---
 # CSV Data Cleaning Agent (`csv_clean_env`)
 
 An OpenEnv reinforcement learning environment where an LLM agent cleans messy CSV datasets by issuing one structured operation per step. The agent inspects the current state of the data — column types, null counts, and a CSV preview — then selects a cleaning operation. After each step the environment returns an updated observation. When the agent signals completion, the environment scores the result against a hidden ground-truth dataset using four equally-weighted metrics.
